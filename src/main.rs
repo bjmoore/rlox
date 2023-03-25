@@ -133,43 +133,30 @@ impl<'a> TokenStream<'a> {
                 '+' => self.add_token(TokenType::Plus),
                 ';' => self.add_token(TokenType::Semicolon),
                 '*' => self.add_token(TokenType::Star),
-                '!' => {
-                    if self.match_next('=') {
-                        self.add_token(TokenType::BangEqual)
-                    } else {
-                        self.add_token(TokenType::Bang)
-                    }
-                }
-                '=' => {
-                    if self.match_next('=') {
-                        self.add_token(TokenType::EqualEqual)
-                    } else {
-                        self.add_token(TokenType::Equal)
-                    }
-                }
-                '<' => {
-                    if self.match_next('=') {
-                        self.add_token(TokenType::LessEqual)
-                    } else {
-                        self.add_token(TokenType::Less)
-                    }
-                }
-                '>' => {
-                    if self.match_next('=') {
-                        self.add_token(TokenType::GreaterEqual)
-                    } else {
-                        self.add_token(TokenType::Greater)
-                    }
-                }
-                '/' => {
-                    if self.match_next('/') {
+                '!' => match self.raw_input.next_if_eq(&'=') {
+                    Some(_) => self.add_token(TokenType::BangEqual),
+                    None => self.add_token(TokenType::Equal),
+                },
+                '=' => match self.raw_input.next_if_eq(&'=') {
+                    Some(_) => self.add_token(TokenType::EqualEqual),
+                    None => self.add_token(TokenType::Equal),
+                },
+                '<' => match self.raw_input.next_if_eq(&'=') {
+                    Some(_) => self.add_token(TokenType::LessEqual),
+                    None => self.add_token(TokenType::Less),
+                },
+                '>' => match self.raw_input.next_if_eq(&'=') {
+                    Some(_) => self.add_token(TokenType::GreaterEqual),
+                    None => self.add_token(TokenType::Greater),
+                },
+                '/' => match self.raw_input.next_if_eq(&'/') {
+                    Some(_) => {
                         self.consume_until('\n');
                         self.line += 1;
                         None
-                    } else {
-                        self.add_token(TokenType::Slash)
                     }
-                }
+                    None => self.add_token(TokenType::Slash),
+                },
                 ' ' | '\r' | '\t' => None,
                 '\n' => {
                     self.line += 1;
@@ -191,20 +178,6 @@ impl<'a> TokenStream<'a> {
         }))
     }
 
-    fn match_next(&mut self, c: char) -> bool {
-        match self.raw_input.peek() {
-            Some(&next_char) => {
-                if c == next_char {
-                    self.raw_input.next();
-                    true
-                } else {
-                    false
-                }
-            }
-            None => false,
-        }
-    }
-
     fn consume_until(&mut self, c: char) {
         self.raw_input.find(|&x| x == c);
     }
@@ -212,10 +185,7 @@ impl<'a> TokenStream<'a> {
     fn string(&mut self) -> Option<Result<Token, ParseError>> {
         let string_value: String = self.raw_input.by_ref().take_while(|&c| c != '"').collect();
         if string_value.ends_with('"') {
-            Some(Ok(Token {
-                token_type: TokenType::String(string_value),
-                line: self.line,
-            }))
+            self.add_token(TokenType::String(string_value))
         } else {
             Some(Err(ParseError::UnterminatedStringError(
                 string_value,
@@ -233,16 +203,39 @@ impl<'a> TokenStream<'a> {
         // TODO: Add fractional parts
 
         match numeric_string.parse::<f64>() {
-            Ok(n) => Some(Ok(Token {
-                token_type: TokenType::Number(n),
-                line: self.line,
-            })),
+            Ok(n) => self.add_token(TokenType::Number(n)),
             Err(_) => Some(Err(ParseError::ParseFloatError(numeric_string, self.line))),
         }
     }
 
     fn identifier(&mut self, c: char) -> Option<Result<Token, ParseError>> {
-        None
+        let mut identifier_string = String::from(c);
+        while let Some(c) = self
+            .raw_input
+            .next_if(|&c| c.is_ascii_alphabetic() || c == '_')
+        {
+            identifier_string.push(c);
+        }
+
+        match identifier_string.as_str() {
+            "and" => self.add_token(TokenType::And),
+            "class" => self.add_token(TokenType::Class),
+            "else" => self.add_token(TokenType::Else),
+            "false" => self.add_token(TokenType::False),
+            "for" => self.add_token(TokenType::For),
+            "fun" => self.add_token(TokenType::Fun),
+            "if" => self.add_token(TokenType::If),
+            "nil" => self.add_token(TokenType::Nil),
+            "or" => self.add_token(TokenType::Or),
+            "print" => self.add_token(TokenType::Print),
+            "return" => self.add_token(TokenType::Return),
+            "super" => self.add_token(TokenType::Super),
+            "this" => self.add_token(TokenType::This),
+            "true" => self.add_token(TokenType::True),
+            "var" => self.add_token(TokenType::Var),
+            "while" => self.add_token(TokenType::While),
+            _ => self.add_token(TokenType::Identifier(identifier_string)),
+        }
     }
 }
 
