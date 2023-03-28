@@ -57,7 +57,7 @@ fn run(input: &str) -> Result<(), Box<dyn Error>> {
         println!("{:?}", err);
     }
 
-    let parser = Parser::new(tokens.iter());
+    let parser = Parser::new(tokens);
 
     let expr = parser.parse();
 
