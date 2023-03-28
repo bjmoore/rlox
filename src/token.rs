@@ -162,6 +162,10 @@ impl<'a> TokenStream<'a> {
         loop {
             match self.raw_input.next() {
                 Some('"') => break,
+                Some('\n') => {
+                    self.line += 1;
+                    string_value.push('\n');
+                }
                 Some(c) => string_value.push(c),
                 None => {
                     return Some(Err(ParseError::UnterminatedStringError(
@@ -171,7 +175,6 @@ impl<'a> TokenStream<'a> {
                 }
             }
         }
-        self.line += string_value.chars().filter(|&c| c == '\n').count() as u32;
         self.add_token(TokenType::String(string_value))
     }
 
