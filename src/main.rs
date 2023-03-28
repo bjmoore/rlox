@@ -8,7 +8,6 @@ use std::fs;
 use std::io;
 use std::io::Write;
 
-use expression::test_ast_printer;
 use token::ParseError;
 use token::Token;
 use token::TokenStream;
@@ -17,7 +16,6 @@ use crate::parser::Parser;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
-    test_ast_printer();
     if args.len() > 2 {
         Err(Box::<dyn Error>::from("Usage: rlox [script]"))
     } else if args.len() == 2 {
