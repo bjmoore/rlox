@@ -157,16 +157,22 @@ impl<'a> TokenStream<'a> {
     }
 
     fn string(&mut self) -> Option<Result<Token, ParseError>> {
-        let string_value: String = self.raw_input.by_ref().take_while(|&c| c != '"').collect();
-        if string_value.ends_with('"') {
-            self.line += string_value.chars().filter(|&c| c == '\n').count() as u32;
-            self.add_token(TokenType::String(string_value))
-        } else {
-            Some(Err(ParseError::UnterminatedStringError(
-                string_value,
-                self.line,
-            )))
+        // consume characters from the input until we find a closing quote
+        let mut string_value = String::new();
+        loop {
+            match self.raw_input.next() {
+                Some('"') => break,
+                Some(c) => string_value.push(c),
+                None => {
+                    return Some(Err(ParseError::UnterminatedStringError(
+                        string_value,
+                        self.line,
+                    )))
+                }
+            }
         }
+        self.line += string_value.chars().filter(|&c| c == '\n').count() as u32;
+        self.add_token(TokenType::String(string_value))
     }
 
     fn number(&mut self, c: char) -> Option<Result<Token, ParseError>> {
