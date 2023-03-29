@@ -8,22 +8,22 @@ pub struct Parser {
     tokens: Vec<Token>,
 }
 
-type ExprIndex<'a> = (Expr<'a>, usize);
+type IndexedExpr<'a> = (Expr<'a>, usize);
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens }
     }
 
-    pub fn parse(&self) -> Result<ExprIndex, ParseError> {
+    pub fn parse(&self) -> Result<IndexedExpr, ParseError> {
         self.expression(0)
     }
 
-    fn expression(&self, index: usize) -> Result<ExprIndex, ParseError> {
+    fn expression(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         self.equality(index)
     }
 
-    fn equality(&self, index: usize) -> Result<ExprIndex, ParseError> {
+    fn equality(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         let (mut expr, mut index) = self.comparison(index)?;
         while let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
@@ -38,7 +38,7 @@ impl Parser {
         Ok((expr, index))
     }
 
-    fn comparison(&self, index: usize) -> Result<ExprIndex, ParseError> {
+    fn comparison(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         let (mut expr, mut index) = self.term(index)?;
         while let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
@@ -56,7 +56,7 @@ impl Parser {
         Ok((expr, index))
     }
 
-    fn term(&self, index: usize) -> Result<ExprIndex, ParseError> {
+    fn term(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         let (mut expr, mut index) = self.factor(index)?;
         while let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
@@ -71,7 +71,7 @@ impl Parser {
         Ok((expr, index))
     }
 
-    fn factor(&self, index: usize) -> Result<ExprIndex, ParseError> {
+    fn factor(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         let (mut expr, mut index) = self.unary(index)?;
         while let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
@@ -86,7 +86,7 @@ impl Parser {
         Ok((expr, index))
     }
 
-    fn unary(&self, index: usize) -> Result<ExprIndex, ParseError> {
+    fn unary(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         let tok = self.get_token(index)?;
         match tok.token_type {
             TokenType::Bang | TokenType::Minus => {
@@ -97,7 +97,7 @@ impl Parser {
         }
     }
 
-    fn primary(&self, index: usize) -> Result<ExprIndex, ParseError> {
+    fn primary(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         let tok = self.get_token(index)?;
         match &tok.token_type {
             TokenType::False => Ok((Expr::Literal(Value::Bool(false)), index + 1)),
