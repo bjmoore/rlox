@@ -50,20 +50,12 @@ pub enum TokenType {
     True,
     Var,
     While,
-
-    Eof,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub line: u32,
-}
-
-impl Token {
-    pub fn new(token_type: TokenType, line: u32) -> Self {
-        Self { token_type, line }
-    }
 }
 
 impl fmt::Display for Token {

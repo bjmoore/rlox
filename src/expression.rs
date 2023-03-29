@@ -1,5 +1,4 @@
 use token::Token;
-use token::TokenType;
 
 use crate::token;
 
@@ -49,20 +48,4 @@ impl<'a> AstPrintable for Expr<'a> {
             }
         }
     }
-}
-
-pub fn test_ast_printer() {
-    let bang_tok = Token::new(TokenType::Bang, 0);
-    let star_tok = Token::new(TokenType::Star, 0);
-    let expr = Expr::Binary(
-        Box::new(Expr::Unary(
-            &bang_tok,
-            Box::new(Expr::Literal(Value::Number(123f64))),
-        )),
-        &star_tok,
-        Box::new(Expr::Grouping(Box::new(Expr::Literal(Value::Number(
-            45.67,
-        ))))),
-    );
-    print!("{}", expr.print());
 }

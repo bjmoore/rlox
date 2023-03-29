@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_file(path: &str) -> Result<(), Box<dyn Error>> {
     let input = String::from_utf8(fs::read(path)?)?;
-    run(&input)
+    Ok(run(&input))
 }
 
 fn run_prompt() -> Result<(), Box<dyn Error>> {
@@ -40,7 +40,7 @@ fn run_prompt() -> Result<(), Box<dyn Error>> {
     }
 }
 
-fn run(input: &str) -> Result<(), Box<dyn Error>> {
+fn run(input: &str) {
     let (tokens, errs): (Vec<Result<Token, _>>, Vec<Result<_, ParseError>>) =
         TokenStream::new(input).partition(|t| t.is_ok());
 
@@ -60,6 +60,4 @@ fn run(input: &str) -> Result<(), Box<dyn Error>> {
     let expr = parser.parse();
 
     println!("{:?}", expr);
-
-    Ok(())
 }
