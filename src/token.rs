@@ -1,7 +1,8 @@
-use std::error::Error;
 use std::fmt;
 use std::iter::Peekable;
 use std::str::Chars;
+
+use crate::error::ParseError;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
@@ -221,42 +222,3 @@ impl<'a> Iterator for TokenStream<'a> {
         self.scan()
     }
 }
-
-#[derive(Debug, PartialEq)]
-pub enum ParseError {
-    InvalidCharacter(char, u32),
-    ParseFloatError(String, u32),
-    UnterminatedStringError(String, u32),
-    UnbalancedParenthesis(u32),
-    ExpectedExpression(u32),
-    UnexpectedEof,
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::InvalidCharacter(char, line) => {
-                write!(f, "Invalid character: {} on line {}", char, line)
-            }
-            Self::ParseFloatError(literal, line) => {
-                write!(
-                    f,
-                    "Unable to parse number literal {} on line {}",
-                    literal, line
-                )
-            }
-            Self::UnterminatedStringError(literal, line) => {
-                write!(f, "Unterminated string {} on line {}", literal, line)
-            }
-            Self::UnbalancedParenthesis(line) => {
-                write!(f, "Mismatched parenthesis on line {}", line)
-            }
-            Self::ExpectedExpression(line) => {
-                write!(f, "Expected expression on line {}", line)
-            }
-            Self::UnexpectedEof => write!(f, "Unexpected end of file"),
-        }
-    }
-}
-
-impl Error for ParseError {}

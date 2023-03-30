@@ -1,6 +1,10 @@
+mod error;
 mod expression;
+mod operator;
 mod parser;
+mod statement;
 mod token;
+mod value;
 
 use std::env;
 use std::error::Error;
@@ -8,7 +12,7 @@ use std::fs;
 use std::io;
 use std::io::Write;
 
-use token::ParseError;
+use error::ParseError;
 use token::Token;
 use token::TokenStream;
 
@@ -57,7 +61,8 @@ fn run(input: &str) {
 
     let parser = Parser::new(tokens);
 
-    let expr = parser.parse();
-
-    println!("{:?}", expr);
+    match parser.parse() {
+        Ok(expr) => println!("{:?}", expr.interpret()),
+        Err(err) => println!("{:?}", err),
+    }
 }

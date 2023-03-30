@@ -1,8 +1,8 @@
+use crate::error::ParseError;
 use crate::expression::Expr;
-use crate::expression::Value;
-use crate::token::ParseError;
 use crate::token::Token;
 use crate::token::TokenType;
+use crate::value::LoxValue;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -15,8 +15,9 @@ impl Parser {
         Self { tokens }
     }
 
-    pub fn parse(&self) -> Result<IndexedExpr, ParseError> {
-        self.expression(0)
+    pub fn parse(&self) -> Result<Expr, ParseError> {
+        let (expr, _) = self.expression(0)?;
+        Ok(expr)
     }
 
     fn expression(&self, index: usize) -> Result<IndexedExpr, ParseError> {
@@ -100,11 +101,11 @@ impl Parser {
     fn primary(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         let tok = self.get_token(index)?;
         match &tok.token_type {
-            TokenType::False => Ok((Expr::Literal(Value::Bool(false)), index + 1)),
-            TokenType::True => Ok((Expr::Literal(Value::Bool(true)), index + 1)),
-            TokenType::Nil => Ok((Expr::Literal(Value::Nil), index + 1)),
-            TokenType::Number(n) => Ok((Expr::Literal(Value::Number(*n)), index + 1)),
-            TokenType::String(s) => Ok((Expr::Literal(Value::String(s.clone())), index + 1)),
+            TokenType::False => Ok((Expr::Literal(LoxValue::Bool(false)), index + 1)),
+            TokenType::True => Ok((Expr::Literal(LoxValue::Bool(true)), index + 1)),
+            TokenType::Nil => Ok((Expr::Literal(LoxValue::Nil), index + 1)),
+            TokenType::Number(n) => Ok((Expr::Literal(LoxValue::Number(*n)), index + 1)),
+            TokenType::String(s) => Ok((Expr::Literal(LoxValue::String(s.clone())), index + 1)),
             TokenType::LeftParen => {
                 let (expr, new_index) = self.expression(index + 1)?;
                 let tok = self.get_token(new_index)?;
