@@ -177,7 +177,12 @@ impl<'a> TokenStream<'a> {
             numeric_string.push(c);
         }
 
-        // TODO: Add fractional parts
+        if let Some(c) = self.raw_input.next_if_eq(&'.') {
+            numeric_string.push('.');
+            while let Some(c) = self.raw_input.next_if(|&c| c.is_ascii_digit()) {
+                numeric_string.push(c);
+            }
+        }
 
         match numeric_string.parse::<f64>() {
             Ok(n) => self.add_token(TokenType::Number(n)),
