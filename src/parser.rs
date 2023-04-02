@@ -1,5 +1,6 @@
 use crate::error::ParseError;
 use crate::expression::Expr;
+use crate::statement::Stmt;
 use crate::token::Token;
 use crate::token::TokenType;
 use crate::value::LoxValue;
@@ -15,10 +16,23 @@ impl Parser {
         Self { tokens }
     }
 
-    pub fn parse(&self) -> Result<Expr, ParseError> {
+    pub fn parse(&self) -> Result<Vec<Stmt>, ParseError> {
         let (expr, _) = self.expression(0)?;
         Ok(expr)
     }
+
+    fn statement(&self, index: usize) -> Result<Stmt, ParseError> {
+        if let Some(tok) = self.tokens.get(index) {
+            match tok.token_type {
+                TokenType::Print => self.printStatement(index + 1),
+                _ => self.expressionStatement(index),
+            }
+        }
+    }
+
+    fn printStatement(&self, index: usize) -> Result<Stmt, ParseError> {}
+
+    fn expressionStatement(&self, index: usize) -> Result<Stmt, ParseError> {}
 
     fn expression(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         self.equality(index)

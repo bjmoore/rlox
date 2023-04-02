@@ -1,7 +1,6 @@
-struct Stmt {}
+use crate::expression::Expr;
 
-impl Stmt {
-    fn interpret(&self) {
-        unimplemented!()
-    }
+pub enum Stmt<'a> {
+    ExprStmt(Expr<'a>),
+    PrintStmt(Expr<'a>),
 }
