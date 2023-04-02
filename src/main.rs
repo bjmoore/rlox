@@ -18,6 +18,7 @@ use token::TokenStream;
 use crate::parser::Parser;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // TODO: add a debug argument
     let args: Vec<String> = env::args().collect();
     if args.len() > 2 {
         Err(Box::<dyn Error>::from("Usage: rlox [script]"))
@@ -44,20 +45,33 @@ fn run_prompt() -> Result<(), Box<dyn Error>> {
 }
 
 fn run(input: &str) {
+    // lex and handle errs
     let (tokens, errs): (Vec<Result<Token, _>>, Vec<Result<_, ParseError>>) =
         TokenStream::new(input).partition(|t| t.is_ok());
 
     let tokens = tokens.into_iter().map(|t| t.unwrap()).collect::<Vec<_>>();
     let errs = errs.into_iter().map(|t| t.unwrap_err()).collect::<Vec<_>>();
 
+    /*
     for token in &tokens {
         println!("{:?}", token);
     }
 
     for err in errs {
         println!("{:?}", err);
-    }
+    } */
 
+    // parse and handle errs
     let parser = Parser::new(tokens);
-    print!("{:?}", parser.parse());
+    match parser.parse() {
+        Ok(program) => {
+            for statement in program {
+                // execute and dont handle errs
+                statement.execute();
+            }
+        }
+        Err(_) => {
+            print!("some parsing error lmfao")
+        }
+    }
 }

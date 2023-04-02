@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use token::Token;
 
 use crate::error::RuntimeError;
@@ -12,10 +14,10 @@ pub enum Expr<'a> {
     Unary(&'a Token, Box<Expr<'a>>),
 }
 
-impl<'a> Expr<'a> {
+impl Expr<'_> {
     pub fn print_ast(&self) -> String {
         match self {
-            Expr::Literal(lit) => lit.print(),
+            Expr::Literal(lit) => lit.to_string(),
             Expr::Unary(operator, expr) => {
                 format!("({} {})", operator, expr.print_ast())
             }
@@ -28,11 +30,11 @@ impl<'a> Expr<'a> {
         }
     }
 
-    pub fn interpret(&self) -> Result<LoxValue, RuntimeError> {
+    pub fn evaluate(&self) -> Result<LoxValue, RuntimeError> {
         match self {
             Expr::Literal(lit) => Ok(lit.clone()),
             Expr::Unary(operator, expr) => {
-                let right = expr.interpret()?;
+                let right = expr.evaluate()?;
                 match operator.token_type {
                     token::TokenType::Minus => match right {
                         LoxValue::Number(value) => Ok(LoxValue::Number(-value)),
@@ -55,8 +57,8 @@ impl<'a> Expr<'a> {
                 }
             }
             Expr::Binary(left, operator, right) => {
-                let left = left.interpret()?;
-                let right = right.interpret()?;
+                let left = left.evaluate()?;
+                let right = right.evaluate()?;
                 match operator.token_type {
                     token::TokenType::Minus => match (left, right) {
                         (LoxValue::Number(left), LoxValue::Number(right)) => {
@@ -139,7 +141,7 @@ impl<'a> Expr<'a> {
                     )),
                 }
             }
-            Expr::Grouping(expr) => expr.interpret(),
+            Expr::Grouping(expr) => expr.evaluate(),
         }
     }
 }

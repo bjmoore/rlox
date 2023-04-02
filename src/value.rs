@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Clone)]
 pub enum LoxValue {
     String(String),
@@ -6,19 +8,19 @@ pub enum LoxValue {
     Nil,
 }
 
-impl LoxValue {
-    pub fn print(&self) -> String {
+impl fmt::Display for LoxValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LoxValue::String(value) => {
-                format!("{}", value)
+                write!(f, "{}", value)
             }
             LoxValue::Bool(bool) => {
-                format!("{}", bool)
+                write!(f, "{}", bool)
             }
             LoxValue::Nil => {
-                format!("nil")
+                write!(f, "nil")
             }
-            LoxValue::Number(value) => format!("{}", value),
+            LoxValue::Number(value) => write!(f, "{}", value),
         }
     }
 }
