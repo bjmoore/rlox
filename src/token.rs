@@ -173,14 +173,14 @@ impl<'a> TokenStream<'a> {
 
     fn number(&mut self, c: char) -> Option<Result<Token, ParseError>> {
         let mut numeric_string = String::from(c);
-        while let Some(c) = self.raw_input.next_if(|&c| c.is_ascii_digit()) {
-            numeric_string.push(c);
+        while let Some(digit) = self.raw_input.next_if(|&c| c.is_ascii_digit()) {
+            numeric_string.push(digit);
         }
 
-        if let Some(c) = self.raw_input.next_if_eq(&'.') {
-            numeric_string.push('.');
-            while let Some(c) = self.raw_input.next_if(|&c| c.is_ascii_digit()) {
-                numeric_string.push(c);
+        if let Some(dot) = self.raw_input.next_if_eq(&'.') {
+            numeric_string.push(dot);
+            while let Some(digit) = self.raw_input.next_if(|&c| c.is_ascii_digit()) {
+                numeric_string.push(digit);
             }
         }
 
