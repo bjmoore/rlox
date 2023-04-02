@@ -1,11 +1,2 @@
-"String"
-
-
-
-"Multi
-line
-string"
-
-== == == == == != <=
-
-47123
+print 3+4;
+print "Hello world!";

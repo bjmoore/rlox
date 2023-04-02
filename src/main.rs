@@ -1,6 +1,5 @@
 mod error;
 mod expression;
-mod operator;
 mod parser;
 mod statement;
 mod token;
@@ -60,9 +59,5 @@ fn run(input: &str) {
     }
 
     let parser = Parser::new(tokens);
-
-    match parser.parse() {
-        Ok(expr) => println!("{:?}", expr.interpret()),
-        Err(err) => println!("{:?}", err),
-    }
+    print!("{:?}", parser.parse());
 }

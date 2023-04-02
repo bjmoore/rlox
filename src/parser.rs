@@ -10,6 +10,7 @@ pub struct Parser {
 }
 
 type IndexedExpr<'a> = (Expr<'a>, usize);
+type IndexedStmt<'a> = (Stmt<'a>, usize);
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
@@ -17,22 +18,50 @@ impl Parser {
     }
 
     pub fn parse(&self) -> Result<Vec<Stmt>, ParseError> {
-        let (expr, _) = self.expression(0)?;
-        Ok(expr)
+        let mut index: usize = 0;
+        let mut program: Vec<Stmt> = Vec::new();
+        while let Some(_) = self.tokens.get(index) {
+            let (stmt, new_index) = self.statement(index)?;
+            program.push(stmt);
+            index = new_index;
+        }
+        Ok(program)
     }
 
-    fn statement(&self, index: usize) -> Result<Stmt, ParseError> {
+    fn statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
         if let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
-                TokenType::Print => self.printStatement(index + 1),
-                _ => self.expressionStatement(index),
+                TokenType::Print => self.print_statement(index + 1),
+                _ => self.expression_statement(index),
             }
+        } else {
+            Err(ParseError::UnexpectedEof)
         }
     }
 
-    fn printStatement(&self, index: usize) -> Result<Stmt, ParseError> {}
+    fn print_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        let (value, new_index) = self.expression(index)?;
+        if let Some(tok) = self.tokens.get(new_index) {
+            match tok.token_type {
+                TokenType::Semicolon => Ok((Stmt::PrintStmt(value), new_index + 1)),
+                _ => Err(ParseError::ExpectedSemicolon(tok.line)),
+            }
+        } else {
+            Err(ParseError::UnexpectedEof)
+        }
+    }
 
-    fn expressionStatement(&self, index: usize) -> Result<Stmt, ParseError> {}
+    fn expression_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        let (value, new_index) = self.expression(index)?;
+        if let Some(tok) = self.tokens.get(new_index) {
+            match tok.token_type {
+                TokenType::Semicolon => Ok((Stmt::ExprStmt(value), new_index + 1)),
+                _ => Err(ParseError::ExpectedSemicolon(tok.line)),
+            }
+        } else {
+            Err(ParseError::UnexpectedEof)
+        }
+    }
 
     fn expression(&self, index: usize) -> Result<IndexedExpr, ParseError> {
         self.equality(index)
