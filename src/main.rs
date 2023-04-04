@@ -52,11 +52,11 @@ fn run(input: &str) {
     let tokens = tokens.into_iter().map(|t| t.unwrap()).collect::<Vec<_>>();
     let errs = errs.into_iter().map(|t| t.unwrap_err()).collect::<Vec<_>>();
 
-    /*
     for token in &tokens {
         println!("{:?}", token);
     }
 
+    /*
     for err in errs {
         println!("{:?}", err);
     } */
@@ -67,11 +67,12 @@ fn run(input: &str) {
         Ok(program) => {
             for statement in program {
                 // execute and dont handle errs
-                statement.execute();
+                // statement.execute();
+                println!("{:?}", statement);
             }
         }
-        Err(_) => {
-            print!("some parsing error lmfao")
+        Err(e) => {
+            println!("{:?}", e.to_string())
         }
     }
 }

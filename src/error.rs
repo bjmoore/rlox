@@ -9,6 +9,7 @@ pub enum ParseError {
     UnbalancedParenthesis(u32),
     ExpectedExpression(u32),
     ExpectedSemicolon(u32),
+    ExpectedIdentifier(u32),
     UnexpectedEof,
 }
 
@@ -37,6 +38,13 @@ impl fmt::Display for ParseError {
             Self::UnexpectedEof => write!(f, "Unexpected end of file"),
             Self::ExpectedSemicolon(line) => {
                 write!(f, "Expected semicolon at end of statement on line {}", line)
+            }
+            Self::ExpectedIdentifier(line) => {
+                write!(
+                    f,
+                    "Expected variable name after var statement on line {}",
+                    line
+                )
             }
         }
     }

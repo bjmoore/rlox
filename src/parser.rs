@@ -12,20 +12,62 @@ pub struct Parser {
 type IndexedExpr<'a> = (Expr<'a>, usize);
 type IndexedStmt<'a> = (Stmt<'a>, usize);
 
+// TODO: Rationalize the index manipulation in this whole file
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens }
     }
 
+    // TODO: This return value is probably wrong - depends on how we handle parsing errors?
     pub fn parse(&self) -> Result<Vec<Stmt>, ParseError> {
         let mut index: usize = 0;
         let mut program: Vec<Stmt> = Vec::new();
         while let Some(_) = self.tokens.get(index) {
-            let (stmt, new_index) = self.statement(index)?;
+            let (stmt, new_index) = self.declaration(index)?;
             program.push(stmt);
             index = new_index;
         }
         Ok(program)
+    }
+
+    fn declaration(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        if let Some(tok) = self.tokens.get(index) {
+            match tok.token_type {
+                TokenType::Var => self.var_declaration(index + 1),
+                _ => self.statement(index),
+            }
+        } else {
+            Err(ParseError::UnexpectedEof)
+        }
+    }
+
+    fn var_declaration(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        let (tok, index) = self.next(index)?;
+        // expect an identifier or fail
+        if !matches!(&tok.token_type, TokenType::Identifier(_)) {
+            return Err(ParseError::ExpectedIdentifier(tok.line));
+        }
+
+        // if the token after that is = then populate an initializer
+        let (tok, mut index) = self.next(index)?;
+        let initializer = match tok.token_type {
+            TokenType::Equal => {
+                let (expr, new_index) = self.expression(index)?;
+                index = new_index;
+                Some(expr)
+            }
+            _ => None,
+        };
+
+        // finally our statement should end with a semicolon
+        println!("{:?}", index);
+        let (tok, index) = self.next(index)?;
+        if !matches!(&tok.token_type, TokenType::Semicolon) {
+            return Err(ParseError::ExpectedSemicolon(tok.line));
+        }
+
+        // return (ident_tok, initializer)
+        Ok((Stmt::VarStmt(tok, initializer), index))
     }
 
     fn statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
@@ -131,29 +173,28 @@ impl Parser {
     }
 
     fn unary(&self, index: usize) -> Result<IndexedExpr, ParseError> {
-        let tok = self.get_token(index)?;
+        let (tok, index) = self.next(index)?;
         match tok.token_type {
             TokenType::Bang | TokenType::Minus => {
-                let (expr, new_index) = self.unary(index + 1)?;
-                Ok((Expr::Unary(tok, Box::new(expr)), new_index))
+                let (expr, index) = self.unary(index)?;
+                Ok((Expr::Unary(tok, Box::new(expr)), index))
             }
-            _ => self.primary(index),
+            _ => self.primary(tok, index),
         }
     }
 
-    fn primary(&self, index: usize) -> Result<IndexedExpr, ParseError> {
-        let tok = self.get_token(index)?;
+    fn primary(&self, tok: &Token, index: usize) -> Result<IndexedExpr, ParseError> {
         match &tok.token_type {
-            TokenType::False => Ok((Expr::Literal(LoxValue::Bool(false)), index + 1)),
-            TokenType::True => Ok((Expr::Literal(LoxValue::Bool(true)), index + 1)),
-            TokenType::Nil => Ok((Expr::Literal(LoxValue::Nil), index + 1)),
-            TokenType::Number(n) => Ok((Expr::Literal(LoxValue::Number(*n)), index + 1)),
-            TokenType::String(s) => Ok((Expr::Literal(LoxValue::String(s.clone())), index + 1)),
+            TokenType::False => Ok((Expr::Literal(LoxValue::Bool(false)), index)),
+            TokenType::True => Ok((Expr::Literal(LoxValue::Bool(true)), index)),
+            TokenType::Nil => Ok((Expr::Literal(LoxValue::Nil), index)),
+            TokenType::Number(n) => Ok((Expr::Literal(LoxValue::Number(*n)), index)),
+            TokenType::String(s) => Ok((Expr::Literal(LoxValue::String(s.clone())), index)),
             TokenType::LeftParen => {
-                let (expr, new_index) = self.expression(index + 1)?;
-                let tok = self.get_token(new_index)?;
+                let (expr, index) = self.expression(index)?;
+                let (tok, index) = self.next(index)?;
                 match tok.token_type {
-                    TokenType::RightParen => Ok((Expr::Grouping(Box::new(expr)), new_index + 1)),
+                    TokenType::RightParen => Ok((Expr::Grouping(Box::new(expr)), index)),
                     _ => Err(ParseError::UnbalancedParenthesis(tok.line)),
                 }
             }
@@ -161,9 +202,9 @@ impl Parser {
         }
     }
 
-    fn get_token(&self, index: usize) -> Result<&Token, ParseError> {
+    fn next(&self, index: usize) -> Result<(&Token, usize), ParseError> {
         match self.tokens.get(index) {
-            Some(tok) => Ok(tok),
+            Some(tok) => Ok((tok, index + 1)),
             None => Err(ParseError::UnexpectedEof),
         }
     }
