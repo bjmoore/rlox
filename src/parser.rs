@@ -60,7 +60,6 @@ impl Parser {
         };
 
         // finally our statement should end with a semicolon
-        println!("{:?}", index);
         let (tok, index) = self.next(index)?;
         if !matches!(&tok.token_type, TokenType::Semicolon) {
             return Err(ParseError::ExpectedSemicolon(tok.line));
@@ -198,6 +197,7 @@ impl Parser {
                     _ => Err(ParseError::UnbalancedParenthesis(tok.line)),
                 }
             }
+            TokenType::Identifier(name) => Ok((Expr::Variable(name.clone()), index)),
             _ => Err(ParseError::ExpectedExpression(tok.line)),
         }
     }

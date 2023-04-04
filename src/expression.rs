@@ -1,38 +1,24 @@
-use std::fmt::Display;
-
 use token::Token;
 
 use crate::error::RuntimeError;
 use crate::token;
 use crate::value::LoxValue;
 
+// TODO: implement Display
 #[derive(Debug, Clone)]
 pub enum Expr<'a> {
     Binary(Box<Expr<'a>>, &'a Token, Box<Expr<'a>>),
     Grouping(Box<Expr<'a>>),
     Literal(LoxValue),
     Unary(&'a Token, Box<Expr<'a>>),
+    Variable(String), // Identifier names are host-language strings, not LoxValue strings
 }
 
 impl Expr<'_> {
-    pub fn print_ast(&self) -> String {
-        match self {
-            Expr::Literal(lit) => lit.to_string(),
-            Expr::Unary(operator, expr) => {
-                format!("({} {})", operator, expr.print_ast())
-            }
-            Expr::Binary(left, operator, right) => {
-                format!("({} {} {})", operator, left.print_ast(), right.print_ast())
-            }
-            Expr::Grouping(expr) => {
-                format!("(group {})", expr.print_ast())
-            }
-        }
-    }
-
     pub fn evaluate(&self) -> Result<LoxValue, RuntimeError> {
         match self {
             Expr::Literal(lit) => Ok(lit.clone()),
+            Expr::Variable(name) => todo!(),
             Expr::Unary(operator, expr) => {
                 let right = expr.evaluate()?;
                 match operator.token_type {
