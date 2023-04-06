@@ -1,6 +1,7 @@
 mod environment;
 mod error;
 mod expression;
+mod interpreter;
 mod parser;
 mod statement;
 mod token;
@@ -13,6 +14,7 @@ use std::io;
 use std::io::Write;
 
 use error::ParseError;
+use interpreter::LoxInterpreter;
 use token::Token;
 use token::TokenStream;
 
@@ -64,16 +66,8 @@ fn run(input: &str) {
 
     // parse and handle errs
     let parser = Parser::new(tokens);
-    match parser.parse() {
-        Ok(program) => {
-            for statement in program {
-                // execute and dont handle errs
-                // statement.execute();
-                println!("{:?}", statement);
-            }
-        }
-        Err(e) => {
-            println!("{:?}", e.to_string())
-        }
-    }
+    let program = parser.parse().unwrap();
+    let interpreter = LoxInterpreter::new();
+
+    interpreter.run(&program);
 }
