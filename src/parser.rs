@@ -42,13 +42,14 @@ impl Parser {
     }
 
     fn var_declaration(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        let (tok, index) = self.next(index)?;
+        let (identifier, index) = self.next(index)?;
         // expect an identifier or fail
-        if !matches!(&tok.token_type, TokenType::Identifier(_)) {
-            return Err(ParseError::ExpectedIdentifier(tok.line));
+        if !matches!(&identifier.token_type, TokenType::Identifier(_)) {
+            return Err(ParseError::ExpectedIdentifier(identifier.line));
         }
 
         // if the token after that is = then populate an initializer
+        // bug: if there *isnt* an = this crashes on unexpected eof. peek()? next_if?
         let (tok, mut index) = self.next(index)?;
         let initializer = match tok.token_type {
             TokenType::Equal => {
@@ -66,7 +67,7 @@ impl Parser {
         }
 
         // return (ident_tok, initializer)
-        Ok((Stmt::VarStmt(tok, initializer), index))
+        Ok((Stmt::VarStmt(identifier, initializer), index))
     }
 
     fn statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {

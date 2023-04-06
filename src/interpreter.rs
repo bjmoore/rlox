@@ -5,23 +5,30 @@ use crate::statement::Stmt;
 use crate::token;
 use crate::value::LoxValue;
 
-pub struct LoxInterpreter {}
+pub struct LoxInterpreter {
+    environment: Environment,
+}
 
 impl LoxInterpreter {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environment: Environment::new(),
+        }
     }
 
-    pub fn run(&self, program: &Vec<Stmt>) {
+    pub fn run(&mut self, program: &Vec<Stmt>) {
         for statement in program {
-            self.execute(statement);
+            match self.execute(statement) {
+                Ok(_) => (),
+                Err(e) => println!("{:?}", e),
+            }
         }
     }
 
     pub fn evaluate(&self, expr: &Expr) -> Result<LoxValue, RuntimeError> {
         match expr {
             Expr::Literal(lit) => Ok(lit.clone()),
-            Expr::Variable(name) => todo!(), // this also needs access to the enclosing environment scope..
+            Expr::Variable(name) => Ok(self.environment.get(name).clone()),
             Expr::Unary(operator, expr) => {
                 let right = self.evaluate(expr)?;
                 match operator.token_type {
@@ -134,7 +141,7 @@ impl LoxInterpreter {
         }
     }
 
-    pub fn execute(&self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match &stmt {
             Stmt::ExprStmt(expr) => {
                 self.evaluate(expr)?;
@@ -145,11 +152,6 @@ impl LoxInterpreter {
                 Ok(())
             }
             Stmt::VarStmt(name_token, initializer) => {
-                // TODO: Obviously temporary, these vars arent getting piped out to anywhere
-                // .execute() needs access to some shared mutable state (duh), which is ok (?) because
-                // we don't need to recursively call execute (??)
-                let mut environment = Environment::new();
-
                 // TODO: should varstmts just have a string in them?
                 let name = match &name_token.token_type {
                     token::TokenType::Identifier(name) => Ok(name.clone()),
@@ -162,7 +164,7 @@ impl LoxInterpreter {
                     Some(expr) => self.evaluate(expr)?,
                     None => LoxValue::Nil,
                 };
-                environment.values.insert(name, initial_value);
+                self.environment.put(name, initial_value);
                 Ok(())
             }
         }

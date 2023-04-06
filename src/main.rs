@@ -67,7 +67,7 @@ fn run(input: &str) {
     // parse and handle errs
     let parser = Parser::new(tokens);
     let program = parser.parse().unwrap();
-    let interpreter = LoxInterpreter::new();
+    let mut interpreter = LoxInterpreter::new();
 
     interpreter.run(&program);
 }

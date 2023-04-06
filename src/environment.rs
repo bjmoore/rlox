@@ -11,4 +11,12 @@ impl Environment {
             values: HashMap::new(),
         }
     }
+
+    pub fn get(&self, name: &str) -> &LoxValue {
+        self.values.get(name).unwrap_or(&LoxValue::Nil)
+    }
+
+    pub fn put(&mut self, name: String, value: LoxValue) {
+        self.values.insert(name, value);
+    }
 }
