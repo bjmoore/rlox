@@ -151,20 +151,13 @@ impl LoxInterpreter {
                 println!("{}", self.evaluate(value)?);
                 Ok(())
             }
-            Stmt::VarStmt(name_token, initializer) => {
+            Stmt::VarStmt(name, initializer) => {
                 // TODO: should varstmts just have a string in them?
-                let name = match &name_token.token_type {
-                    token::TokenType::Identifier(name) => Ok(name.clone()),
-                    _ => Err(RuntimeError::new(
-                        "var stmt without identifier",
-                        name_token.line,
-                    )),
-                }?;
                 let initial_value = match initializer {
                     Some(expr) => self.evaluate(expr)?,
                     None => LoxValue::Nil,
                 };
-                self.environment.put(name, initial_value);
+                self.environment.put(name.clone(), initial_value);
                 Ok(())
             }
         }
