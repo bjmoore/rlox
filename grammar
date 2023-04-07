@@ -12,7 +12,9 @@ printStmt = "print" expression ";" ;
 
 varDecl = "var" IDENTIFIER ( "=" expression )? ";" ;
 
-
+expression = assignment ;
+assignment = IDENTIFIER "=" assignment
+           | equality ;
 
 primary = "true" | "false" | "nil"
         | NUMBER | STRING

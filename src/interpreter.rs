@@ -25,7 +25,7 @@ impl LoxInterpreter {
         }
     }
 
-    pub fn evaluate(&self, expr: &Expr) -> Result<LoxValue, RuntimeError> {
+    pub fn evaluate(&mut self, expr: &Expr) -> Result<LoxValue, RuntimeError> {
         match expr {
             Expr::Literal(lit) => Ok(lit.clone()),
             Expr::Variable(name) => Ok(self.environment.get(name).clone()),
@@ -138,6 +138,10 @@ impl LoxInterpreter {
                 }
             }
             Expr::Grouping(expr) => self.evaluate(expr),
+            Expr::Assign(name, expr) => {
+                let value = self.evaluate(expr)?;
+                self.environment.assign(name.clone(), value)
+            }
         }
     }
 

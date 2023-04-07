@@ -10,6 +10,7 @@ pub enum ParseError {
     ExpectedExpression(u32),
     ExpectedSemicolon(u32),
     ExpectedIdentifier(u32),
+    InvalidAssignment(u32),
     UnexpectedEof,
 }
 
@@ -45,6 +46,9 @@ impl fmt::Display for ParseError {
                     "Expected variable name after var statement on line {}",
                     line
                 )
+            }
+            Self::InvalidAssignment(line) => {
+                write!(f, "Invalid assignment target on line {}", line)
             }
         }
     }

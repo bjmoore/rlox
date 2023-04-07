@@ -106,7 +106,27 @@ impl Parser {
     }
 
     fn expression(&self, index: usize) -> Result<IndexedExpr, ParseError> {
-        self.equality(index)
+        self.assignment(index)
+    }
+
+    fn assignment(&self, index: usize) -> Result<IndexedExpr, ParseError> {
+        let (expr, index) = self.equality(index)?;
+
+        // if we have an equal
+        if let Some((tok, index)) =
+            self.next_if(index, |t| matches!(t.token_type, TokenType::Equal))
+        {
+            match expr {
+                Expr::Variable(name) => {
+                    let (value, index) = self.assignment(index)?;
+                    Ok((Expr::Assign(name.clone(), Box::new(value)), index))
+                }
+                _ => Err(ParseError::InvalidAssignment(tok.line)),
+            }
+        } else {
+            //  return expr normally
+            Ok((expr, index))
+        }
     }
 
     fn equality(&self, index: usize) -> Result<IndexedExpr, ParseError> {

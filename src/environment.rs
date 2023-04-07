@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::error::RuntimeError;
 use crate::value::LoxValue;
 pub struct Environment {
     values: HashMap<String, LoxValue>,
@@ -37,5 +38,15 @@ impl Environment {
 
     pub fn put(&mut self, name: String, value: LoxValue) {
         self.values.insert(name, value);
+    }
+
+    pub fn assign(&mut self, name: String, value: LoxValue) -> Result<LoxValue, RuntimeError> {
+        if self.values.contains_key(&name) {
+            self.values.insert(name, value.clone());
+            Ok(value)
+        } else {
+            // TODO: Fix this line, add the actual undefined variable name
+            Err(RuntimeError::new("Assignment to undefined variable", 0))
+        }
     }
 }
