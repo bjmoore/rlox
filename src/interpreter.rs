@@ -163,6 +163,14 @@ impl LoxInterpreter {
                 self.environment.put(name.clone(), initial_value);
                 Ok(())
             }
+            Stmt::Block(block) => {
+                self.environment.push_env();
+                for statement in block {
+                    self.execute(statement)?;
+                }
+                self.environment.pop_env();
+                Ok(())
+            }
         }
     }
 }

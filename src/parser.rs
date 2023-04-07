@@ -71,14 +71,38 @@ impl Parser {
     }
 
     fn statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        if let Some(tok) = self.tokens.get(index) {
-            match tok.token_type {
-                TokenType::Print => self.print_statement(index + 1),
-                _ => self.expression_statement(index),
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::Print => self.print_statement(index),
+            TokenType::LeftBrace => {
+                let (block, index) = self.block(index)?;
+                Ok((Stmt::Block(block), index))
             }
-        } else {
-            Err(ParseError::UnexpectedEof)
+            _ => self.expression_statement(index),
         }
+    }
+
+    fn block(&self, mut index: usize) -> Result<(Vec<Stmt>, usize), ParseError> {
+        let mut statements: Vec<Stmt> = Vec::new();
+
+        // while the next token isnt a RightBrace
+        //  try to eat a statement and add to statements
+        loop {
+            let (tok, new_index) = self.next(index)?;
+            match tok.token_type {
+                TokenType::RightBrace => {
+                    index = new_index;
+                    break;
+                }
+                _ => {
+                    let (statement, new_index) = self.declaration(index)?;
+                    statements.push(statement);
+                    index = new_index;
+                }
+            }
+        }
+
+        Ok((statements, index))
     }
 
     fn print_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {

@@ -67,6 +67,11 @@ fn run(input: &str) {
     // parse and handle errs
     let parser = Parser::new(tokens);
     let program = parser.parse().unwrap();
+
+    for statement in &program {
+        println!("{:?}", statement);
+    }
+
     let mut interpreter = LoxInterpreter::new();
 
     interpreter.run(&program);

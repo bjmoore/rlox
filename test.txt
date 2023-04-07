@@ -1,2 +1,6 @@
-print 3+4;
-print "Hello world!";
+var a = 5;
+{
+    var a = 8;
+    print a;
+}
+print a;
