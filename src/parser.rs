@@ -42,27 +42,26 @@ impl Parser {
     }
 
     fn var_declaration(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        let (identifier, index) = self.next(index)?;
+        let (mut tok, mut index) = self.next(index)?;
         // expect an identifier or fail
-        let name = match &identifier.token_type {
+        let name = match &tok.token_type {
             TokenType::Identifier(name) => Ok(name),
-            _ => Err(ParseError::ExpectedIdentifier(identifier.line)),
+            _ => Err(ParseError::ExpectedIdentifier(tok.line)),
         }?;
 
         // if the token after that is = then populate an initializer
         // bug: if there *isnt* an = this crashes on unexpected eof. peek()? next_if?
-        let (tok, mut index) = self.next(index)?;
-        let initializer = match tok.token_type {
-            TokenType::Equal => {
-                let (expr, new_index) = self.expression(index)?;
+        let initializer = match self.next_if(index, |t| matches!(t.token_type, TokenType::Equal)) {
+            Some((_, new_index)) => {
+                let (expr, new_index) = self.expression(new_index)?;
                 index = new_index;
                 Some(expr)
             }
-            _ => None,
+            None => None,
         };
 
         // finally our statement should end with a semicolon
-        let (tok, index) = self.next(index)?;
+        (tok, index) = self.next(index)?;
         if !matches!(&tok.token_type, TokenType::Semicolon) {
             return Err(ParseError::ExpectedSemicolon(tok.line));
         }
@@ -208,6 +207,13 @@ impl Parser {
         match self.tokens.get(index) {
             Some(tok) => Ok((tok, index + 1)),
             None => Err(ParseError::UnexpectedEof),
+        }
+    }
+
+    fn next_if(&self, index: usize, predicate: fn(&Token) -> bool) -> Option<(&Token, usize)> {
+        match self.tokens.get(index) {
+            Some(tok) if predicate(tok) => Some((tok, index + 1)),
+            _ => None,
         }
     }
 }

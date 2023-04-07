@@ -152,7 +152,6 @@ impl LoxInterpreter {
                 Ok(())
             }
             Stmt::VarStmt(name, initializer) => {
-                // TODO: should varstmts just have a string in them?
                 let initial_value = match initializer {
                     Some(expr) => self.evaluate(expr)?,
                     None => LoxValue::Nil,
