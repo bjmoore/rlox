@@ -4,14 +4,12 @@ use crate::error::RuntimeError;
 use crate::value::LoxValue;
 pub struct Environment {
     values: Vec<HashMap<String, LoxValue>>,
-    parent: Option<Box<Environment>>,
 }
 
 impl Environment {
     pub fn new() -> Self {
         Self {
             values: vec![HashMap::new()],
-            parent: None,
         }
     }
 
@@ -24,13 +22,18 @@ impl Environment {
     }
 
     pub fn get(&self, name: &str) -> LoxValue {
-        let last = self.values.len() - 1;
-        match self.values[last].get(name) {
-            Some(value) => value.clone(),
-            None => match &self.parent {
-                Some(environment) => environment.get(name),
-                None => LoxValue::Nil,
-            },
+        let mut env_index = self.values.len() - 1;
+        loop {
+            match self.values[env_index].get(name) {
+                Some(value) => {
+                    return value.clone();
+                }
+                None => (),
+            }
+            if env_index == 0 {
+                return LoxValue::Nil;
+            }
+            env_index -= 1;
         }
     }
 

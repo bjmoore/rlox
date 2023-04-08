@@ -1,6 +1,13 @@
 var a = 5;
+var c = 4;
 {
     var a = 8;
     print a;
+    print c;
 }
 print a;
+
+var b = 6;
+if (b) {
+    print b;
+}
