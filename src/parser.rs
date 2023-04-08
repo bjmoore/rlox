@@ -42,7 +42,7 @@ impl Parser {
     }
 
     fn var_declaration(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        let (mut tok, mut index) = self.next(index)?;
+        let (tok, index) = self.next(index)?;
         // expect an identifier or fail
         let name = match &tok.token_type {
             TokenType::Identifier(name) => Ok(name),
@@ -51,17 +51,17 @@ impl Parser {
 
         // if the token after that is = then populate an initializer
         // bug: if there *isnt* an = this crashes on unexpected eof. peek()? next_if?
-        let initializer = match self.next_if(index, |t| matches!(t.token_type, TokenType::Equal)) {
-            Some((_, new_index)) => {
-                let (expr, new_index) = self.expression(new_index)?;
-                index = new_index;
-                Some(expr)
-            }
-            None => None,
-        };
+        let (initializer, index) =
+            match self.next_if(index, |t| matches!(t.token_type, TokenType::Equal)) {
+                (Some(_), index) => {
+                    let (initializer, index) = self.expression(index)?;
+                    (Some(initializer), index)
+                }
+                (None, new_index) => (None, new_index),
+            };
 
         // finally our statement should end with a semicolon
-        (tok, index) = self.next(index)?;
+        let (tok, index) = self.next(index)?;
         if !matches!(&tok.token_type, TokenType::Semicolon) {
             return Err(ParseError::ExpectedSemicolon(tok.line));
         }
@@ -73,6 +73,7 @@ impl Parser {
     fn statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
         let (tok, index) = self.next(index)?;
         match tok.token_type {
+            TokenType::If => self.if_statement(index),
             TokenType::Print => self.print_statement(index),
             TokenType::LeftBrace => {
                 let (block, index) = self.block(index)?;
@@ -80,6 +81,41 @@ impl Parser {
             }
             _ => self.expression_statement(index),
         }
+    }
+
+    fn if_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        // expect a ( after if
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::LeftParen => Ok(()),
+            _ => Err(ParseError::ExpectedExpression(tok.line)),
+        }?;
+        // consume expr for condition
+        let (condition, index) = self.expression(index)?;
+        // expect a ) after condition
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::RightParen => Ok(()),
+            _ => Err(ParseError::ExpectedExpression(tok.line)),
+        }?;
+
+        // consume a then statement
+        let (then_branch, index) = self.statement(index)?;
+        // if the next thing is an else, consume an else statement
+        let (else_branch, index) =
+            match self.next_if(index, |t| matches!(t.token_type, TokenType::Else)) {
+                (Some(_), index) => {
+                    let (else_branch, index) = self.statement(index)?;
+                    (Some(Box::new(else_branch)), index)
+                }
+                (None, index) => (None, index),
+            };
+
+        // emit an IfStmt(cond, thenstmt, elsestmt)
+        Ok((
+            Stmt::IfStmt(condition, Box::new(then_branch), else_branch),
+            index,
+        ))
     }
 
     fn block(&self, mut index: usize) -> Result<(Vec<Stmt>, usize), ParseError> {
@@ -137,7 +173,7 @@ impl Parser {
         let (expr, index) = self.equality(index)?;
 
         // if we have an equal
-        if let Some((tok, index)) =
+        if let (Some(tok), index) =
             self.next_if(index, |t| matches!(t.token_type, TokenType::Equal))
         {
             match expr {
@@ -254,10 +290,10 @@ impl Parser {
         }
     }
 
-    fn next_if(&self, index: usize, predicate: fn(&Token) -> bool) -> Option<(&Token, usize)> {
+    fn next_if(&self, index: usize, predicate: fn(&Token) -> bool) -> (Option<&Token>, usize) {
         match self.tokens.get(index) {
-            Some(tok) if predicate(tok) => Some((tok, index + 1)),
-            _ => None,
+            Some(tok) if predicate(tok) => (Some(tok), index + 1),
+            _ => (None, index),
         }
     }
 }

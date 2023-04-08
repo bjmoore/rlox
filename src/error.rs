@@ -11,6 +11,7 @@ pub enum ParseError {
     ExpectedSemicolon(u32),
     ExpectedIdentifier(u32),
     InvalidAssignment(u32),
+    TodoError(u32),
     UnexpectedEof,
 }
 
@@ -49,6 +50,13 @@ impl fmt::Display for ParseError {
             }
             Self::InvalidAssignment(line) => {
                 write!(f, "Invalid assignment target on line {}", line)
+            }
+            Self::TodoError(line) => {
+                write!(
+                    f,
+                    "I was too lazy to implement this error message yet {}",
+                    line
+                )
             }
         }
     }

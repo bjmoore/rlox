@@ -171,6 +171,14 @@ impl LoxInterpreter {
                 self.environment.pop_env();
                 Ok(())
             }
+            Stmt::IfStmt(condition, then_stmt, else_branch) => {
+                if self.evaluate(condition)?.is_true() {
+                    self.execute(then_stmt)?;
+                } else if let Some(else_stmt) = else_branch {
+                    self.execute(else_stmt)?;
+                }
+                Ok(())
+            }
         }
     }
 }

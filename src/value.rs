@@ -24,3 +24,9 @@ impl fmt::Display for LoxValue {
         }
     }
 }
+
+impl LoxValue {
+    pub fn is_true(&self) -> bool {
+        true
+    }
+}
