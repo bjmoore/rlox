@@ -29,3 +29,7 @@ if (t or f) {
 if (f or f) {
     print "whale guts";
 }
+
+if (t and t and t and t and t and t and t and t) {
+    print "this should print";
+}
