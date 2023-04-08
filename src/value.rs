@@ -26,7 +26,18 @@ impl fmt::Display for LoxValue {
 }
 
 impl LoxValue {
-    pub fn is_true(&self) -> bool {
-        true
+    pub fn truthy(&self) -> LoxValue {
+        match self {
+            LoxValue::Nil => LoxValue::Bool(false),
+            LoxValue::Bool(bool) => LoxValue::Bool(*bool),
+            _ => LoxValue::Bool(true),
+        }
+    }
+
+    pub fn to_bool(&self) -> bool {
+        match self {
+            LoxValue::Bool(bool) => *bool,
+            _ => self.truthy().to_bool(),
+        }
     }
 }

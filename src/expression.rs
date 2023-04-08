@@ -12,4 +12,5 @@ pub enum Expr<'a> {
     Unary(&'a Token, Box<Expr<'a>>),
     Variable(String), // Identifier names are host-language strings, not LoxValue strings
     Assign(String, Box<Expr<'a>>),
+    Logical(Box<Expr<'a>>, &'a Token, Box<Expr<'a>>),
 }

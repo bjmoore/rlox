@@ -142,6 +142,28 @@ impl LoxInterpreter {
                 let value = self.evaluate(expr)?;
                 self.environment.assign(name.clone(), value)
             }
+            Expr::Logical(left, op, right) => match op.token_type {
+                token::TokenType::And => {
+                    let leftval = self.evaluate(left)?.truthy();
+                    if !leftval.to_bool() {
+                        Ok(leftval)
+                    } else {
+                        Ok(self.evaluate(right)?.truthy())
+                    }
+                }
+                token::TokenType::Or => {
+                    let leftval = self.evaluate(left)?.truthy();
+                    if leftval.to_bool() {
+                        Ok(leftval)
+                    } else {
+                        Ok(self.evaluate(right)?.truthy())
+                    }
+                }
+                _ => Err(RuntimeError::new(
+                    "Somehow parsed a logical expression with non-logical operator",
+                    op.line,
+                )),
+            },
         }
     }
 
@@ -172,7 +194,7 @@ impl LoxInterpreter {
                 Ok(())
             }
             Stmt::IfStmt(condition, then_stmt, else_branch) => {
-                if self.evaluate(condition)?.is_true() {
+                if self.evaluate(condition)?.to_bool() {
                     self.execute(then_stmt)?;
                 } else if let Some(else_stmt) = else_branch {
                     self.execute(else_stmt)?;

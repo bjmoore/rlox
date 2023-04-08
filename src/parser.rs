@@ -170,7 +170,7 @@ impl Parser {
     }
 
     fn assignment(&self, index: usize) -> Result<IndexedExpr, ParseError> {
-        let (expr, index) = self.equality(index)?;
+        let (expr, index) = self.or(index)?;
 
         // if we have an equal
         if let (Some(tok), index) =
@@ -187,6 +187,36 @@ impl Parser {
             //  return expr normally
             Ok((expr, index))
         }
+    }
+
+    fn or(&self, index: usize) -> Result<IndexedExpr, ParseError> {
+        let (mut expr, mut index) = self.and(index)?;
+        while let Some(tok) = self.tokens.get(index) {
+            match tok.token_type {
+                TokenType::Or => {
+                    let (right, new_index) = self.and(index + 1)?;
+                    expr = Expr::Logical(Box::new(expr), tok, Box::new(right));
+                    index = new_index;
+                }
+                _ => break,
+            }
+        }
+        Ok((expr, index))
+    }
+
+    fn and(&self, index: usize) -> Result<IndexedExpr, ParseError> {
+        let (mut expr, mut index) = self.equality(index)?;
+        while let Some(tok) = self.tokens.get(index) {
+            match tok.token_type {
+                TokenType::And => {
+                    let (right, new_index) = self.equality(index + 1)?;
+                    expr = Expr::Logical(Box::new(expr), tok, Box::new(right));
+                    index = new_index;
+                }
+                _ => break,
+            }
+        }
+        Ok((expr, index))
     }
 
     fn equality(&self, index: usize) -> Result<IndexedExpr, ParseError> {

@@ -11,3 +11,21 @@ var b = 6;
 if (b) {
     print b;
 }
+
+var t = true;
+var f = false;
+if (t and t) {
+    print "true and true";
+}
+
+if (t and f) {
+    print "true and false (!!)";
+}
+
+if (t or f) {
+    print "truth or dare";
+}
+
+if (f or f) {
+    print "whale guts";
+}
