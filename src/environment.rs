@@ -43,13 +43,16 @@ impl Environment {
     }
 
     pub fn assign(&mut self, name: String, value: LoxValue) -> Result<LoxValue, RuntimeError> {
-        let last = self.values.len() - 1;
-        if self.values[last].contains_key(&name) {
-            self.values[last].insert(name, value.clone());
-            Ok(value)
-        } else {
-            // TODO: Fix this line, add the actual undefined variable name
-            Err(RuntimeError::new("Assignment to undefined variable", 0))
+        let mut env_index = self.values.len() - 1;
+        loop {
+            if self.values[env_index].contains_key(&name) {
+                self.values[env_index].insert(name, value.clone());
+                return Ok(value);
+            }
+            if env_index == 0 {
+                return Err(RuntimeError::new("Assignment to undefined variable", 0));
+            }
+            env_index -= 1;
         }
     }
 }

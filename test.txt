@@ -22,12 +22,16 @@ if (t and f) {
     print "true and false (!!)";
 }
 
+// comment
+
 if (t or f) {
     print "truth or dare";
 }
 
 if (f or f) {
-    print "whale guts";
+    print "do not print";
+} else {
+    print "else statement";
 }
 
 if (t and t and t and t and t and t and t and t) {
@@ -38,3 +42,9 @@ var e = 5;
 print e;
 e = e+5;
 print e;
+
+var test = 5;
+while (test > 0) {
+    print "test";
+    test = test - 1;
+}
