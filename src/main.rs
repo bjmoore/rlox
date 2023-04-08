@@ -15,6 +15,7 @@ use std::io::Write;
 
 use error::ParseError;
 use interpreter::LoxInterpreter;
+use statement::Stmt;
 use token::Token;
 use token::TokenStream;
 
@@ -55,8 +56,8 @@ fn run(input: &str) {
     let tokens = tokens.into_iter().map(|t| t.unwrap()).collect::<Vec<_>>();
     let errs = errs.into_iter().map(|t| t.unwrap_err()).collect::<Vec<_>>();
 
-    for token in &tokens {
-        println!("{:?}", token);
+    for (i, token) in tokens.clone().iter().enumerate() {
+        println!("{}, {}", i, token);
     }
 
     /*
@@ -66,13 +67,26 @@ fn run(input: &str) {
 
     // parse and handle errs
     let parser = Parser::new(tokens);
-    let program = parser.parse().unwrap();
+    let program = parser.parse();
 
     for statement in &program {
-        println!("{:?}", statement);
+        match statement {
+            Ok(statement) => print!("{}", statement.to_string()),
+            Err(e) => print!("[ERROR] {}", e.to_string()),
+        }
     }
 
-    let mut interpreter = LoxInterpreter::new();
+    let (statements, errs): (Vec<Result<Stmt, _>>, Vec<Result<_, ParseError>>) =
+        program.into_iter().partition(|t| t.is_ok());
 
-    interpreter.run(&program);
+    let program = statements
+        .into_iter()
+        .map(|t| t.unwrap())
+        .collect::<Vec<_>>();
+    let errs = errs.into_iter().map(|t| t.unwrap_err()).collect::<Vec<_>>();
+
+    if errs.is_empty() {
+        let mut interpreter = LoxInterpreter::new();
+        interpreter.run(&program);
+    }
 }

@@ -4,8 +4,10 @@ declaration = varDecl
             | statement ;
 
 statement = exprStmt
+          | forStmt
           | ifStmt 
           | printStmt 
+          | whileStmt
           | block ;
 
 ifStmt = "if" "(" expression ")" statement ( "else" statement )? ;

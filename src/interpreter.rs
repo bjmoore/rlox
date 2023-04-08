@@ -201,6 +201,12 @@ impl LoxInterpreter {
                 }
                 Ok(())
             }
+            Stmt::While(condition, block) => {
+                while self.evaluate(condition)?.truthy().to_bool() {
+                    self.execute(block)?;
+                }
+                Ok(())
+            }
         }
     }
 }

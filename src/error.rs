@@ -1,13 +1,15 @@
 use std::error::Error;
 use std::fmt;
 
+use crate::token::Token;
+
 #[derive(Debug, PartialEq)]
 pub enum ParseError {
     InvalidCharacter(char, u32),
     ParseFloatError(String, u32),
     UnterminatedStringError(String, u32),
     UnbalancedParenthesis(u32),
-    ExpectedExpression(u32),
+    ExpectedExpression(Token, u32, &'static str),
     ExpectedSemicolon(u32),
     ExpectedIdentifier(u32),
     InvalidAssignment(u32),
@@ -34,8 +36,14 @@ impl fmt::Display for ParseError {
             Self::UnbalancedParenthesis(line) => {
                 write!(f, "Mismatched parenthesis on line {}", line)
             }
-            Self::ExpectedExpression(line) => {
-                write!(f, "Expected expression on line {}", line)
+            Self::ExpectedExpression(token, line, in_method) => {
+                write!(
+                    f,
+                    "Expected expression on line {}, token: {}, in method: {}",
+                    line,
+                    token.to_string(),
+                    in_method
+                )
             }
             Self::UnexpectedEof => write!(f, "Unexpected end of file"),
             Self::ExpectedSemicolon(line) => {

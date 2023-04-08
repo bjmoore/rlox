@@ -12,7 +12,7 @@ impl fmt::Display for LoxValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LoxValue::String(value) => {
-                write!(f, "{}", value)
+                write!(f, "\"{}\"", value)
             }
             LoxValue::Bool(bool) => {
                 write!(f, "{}", bool)

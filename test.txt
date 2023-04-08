@@ -33,3 +33,8 @@ if (f or f) {
 if (t and t and t and t and t and t and t and t) {
     print "this should print";
 }
+
+var e = 5;
+print e;
+e = e+5;
+print e;

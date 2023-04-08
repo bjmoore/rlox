@@ -18,16 +18,46 @@ impl Parser {
         Self { tokens }
     }
 
-    // TODO: This return value is probably wrong - depends on how we handle parsing errors?
-    pub fn parse(&self) -> Result<Vec<Stmt>, ParseError> {
+    pub fn parse(&self) -> Vec<Result<Stmt, ParseError>> {
         let mut index: usize = 0;
-        let mut program: Vec<Stmt> = Vec::new();
+        let mut program = Vec::new();
         while let Some(_) = self.tokens.get(index) {
-            let (stmt, new_index) = self.declaration(index)?;
-            program.push(stmt);
-            index = new_index;
+            match self.declaration(index) {
+                Ok((stmt, new_index)) => {
+                    program.push(Ok(stmt));
+                    index = new_index;
+                }
+                Err(e) => {
+                    program.push(Err(e));
+                    index = self.synchronize(index);
+                }
+            }
         }
-        Ok(program)
+        program
+    }
+
+    fn synchronize(&self, mut index: usize) -> usize {
+        while let Some(tok) = self.tokens.get(index) {
+            match tok.token_type {
+                TokenType::Semicolon => {
+                    index += 1;
+                    break;
+                }
+                TokenType::Class
+                | TokenType::Fun
+                | TokenType::Var
+                | TokenType::For
+                | TokenType::If
+                | TokenType::While
+                | TokenType::Print
+                | TokenType::Return => break,
+                _ => (),
+            }
+
+            index += 1;
+        }
+
+        index
     }
 
     fn declaration(&self, index: usize) -> Result<IndexedStmt, ParseError> {
@@ -71,15 +101,17 @@ impl Parser {
     }
 
     fn statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        println!("stmt input: {}", index);
         let (tok, index) = self.next(index)?;
         match tok.token_type {
             TokenType::If => self.if_statement(index),
             TokenType::Print => self.print_statement(index),
+            TokenType::While => self.while_statement(index),
             TokenType::LeftBrace => {
                 let (block, index) = self.block(index)?;
                 Ok((Stmt::Block(block), index))
             }
-            _ => self.expression_statement(index),
+            _ => self.expression_statement(index - 1),
         }
     }
 
@@ -88,7 +120,11 @@ impl Parser {
         let (tok, index) = self.next(index)?;
         match tok.token_type {
             TokenType::LeftParen => Ok(()),
-            _ => Err(ParseError::ExpectedExpression(tok.line)),
+            _ => Err(ParseError::ExpectedExpression(
+                tok.clone(),
+                tok.line,
+                "if stmt (",
+            )),
         }?;
         // consume expr for condition
         let (condition, index) = self.expression(index)?;
@@ -96,7 +132,11 @@ impl Parser {
         let (tok, index) = self.next(index)?;
         match tok.token_type {
             TokenType::RightParen => Ok(()),
-            _ => Err(ParseError::ExpectedExpression(tok.line)),
+            _ => Err(ParseError::ExpectedExpression(
+                tok.clone(),
+                tok.line,
+                "if stmt )",
+            )),
         }?;
 
         // consume a then statement
@@ -116,6 +156,30 @@ impl Parser {
             Stmt::IfStmt(condition, Box::new(then_branch), else_branch),
             index,
         ))
+    }
+
+    fn while_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::LeftParen => Ok(()),
+            _ => Err(ParseError::TodoError(tok.line)),
+        }?;
+
+        let (condition, index) = self.expression(index)?;
+
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::RightParen => Ok(()),
+            _ => Err(ParseError::TodoError(tok.line)),
+        }?;
+
+        let (body, index) = self.statement(index)?;
+
+        Ok((Stmt::While(condition, Box::new(body)), index))
+    }
+
+    fn for_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        Err(ParseError::TodoError(0))
     }
 
     fn block(&self, mut index: usize) -> Result<(Vec<Stmt>, usize), ParseError> {
@@ -142,10 +206,10 @@ impl Parser {
     }
 
     fn print_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        let (value, new_index) = self.expression(index)?;
-        if let Some(tok) = self.tokens.get(new_index) {
+        let (value, index) = self.expression(index)?;
+        if let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
-                TokenType::Semicolon => Ok((Stmt::PrintStmt(value), new_index + 1)),
+                TokenType::Semicolon => Ok((Stmt::PrintStmt(value), index + 1)),
                 _ => Err(ParseError::ExpectedSemicolon(tok.line)),
             }
         } else {
@@ -154,10 +218,11 @@ impl Parser {
     }
 
     fn expression_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        let (value, new_index) = self.expression(index)?;
-        if let Some(tok) = self.tokens.get(new_index) {
+        println!("exprstmt input: {}", index);
+        let (value, index) = self.expression(index)?;
+        if let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
-                TokenType::Semicolon => Ok((Stmt::ExprStmt(value), new_index + 1)),
+                TokenType::Semicolon => Ok((Stmt::ExprStmt(value), index + 1)),
                 _ => Err(ParseError::ExpectedSemicolon(tok.line)),
             }
         } else {
@@ -170,6 +235,7 @@ impl Parser {
     }
 
     fn assignment(&self, index: usize) -> Result<IndexedExpr, ParseError> {
+        println!("input: {}", index);
         let (expr, index) = self.or(index)?;
 
         // if we have an equal
@@ -178,6 +244,8 @@ impl Parser {
         {
             match expr {
                 Expr::Variable(name) => {
+                    println!("if of assignment");
+                    println!("{:?}", self.tokens.get(index));
                     let (value, index) = self.assignment(index)?;
                     Ok((Expr::Assign(name.clone(), Box::new(value)), index))
                 }
@@ -185,6 +253,7 @@ impl Parser {
             }
         } else {
             //  return expr normally
+            println!("return: {}", index);
             Ok((expr, index))
         }
     }
@@ -309,7 +378,11 @@ impl Parser {
                 }
             }
             TokenType::Identifier(name) => Ok((Expr::Variable(name.clone()), index)),
-            _ => Err(ParseError::ExpectedExpression(tok.line)),
+            _ => Err(ParseError::ExpectedExpression(
+                tok.clone(),
+                tok.line,
+                "primary",
+            )),
         }
     }
 
