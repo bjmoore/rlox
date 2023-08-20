@@ -6,7 +6,7 @@ use crate::token;
 use crate::value::LoxValue;
 
 // TODO: implement Display
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr<'a> {
     Binary(Box<Expr<'a>>, &'a Token, Box<Expr<'a>>),
     Grouping(Box<Expr<'a>>),

@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::expression::Expr;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Stmt<'a> {
     ExprStmt(Expr<'a>),
     PrintStmt(Expr<'a>),

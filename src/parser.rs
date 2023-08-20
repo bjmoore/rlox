@@ -12,7 +12,6 @@ pub struct Parser {
 type IndexedExpr<'a> = (Expr<'a>, usize);
 type IndexedStmt<'a> = (Stmt<'a>, usize);
 
-// TODO: Rationalize the index manipulation in this whole file
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens }
@@ -398,5 +397,40 @@ impl Parser {
             Some(tok) if predicate(tok) => (Some(tok), index + 1),
             _ => (None, index),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_literal_bool() {
+        let number1 = Token {
+            token_type: TokenType::Number(1.0),
+            line: 0,
+        };
+        let plus = Token {
+            token_type: TokenType::Plus,
+            line: 0,
+        };
+        let number2 = Token {
+            token_type: TokenType::Number(2.0),
+            line: 0,
+        };
+        let semicolon = Token {
+            token_type: TokenType::Semicolon,
+            line: 0,
+        };
+        let test_tok_stream = vec![number1, plus.clone(), number2, semicolon];
+        let test_parser = Parser::new(test_tok_stream);
+        assert_eq!(
+            *test_parser.parse()[0].as_ref().unwrap(),
+            Stmt::ExprStmt(Expr::Binary(
+                Box::new(Expr::Literal(LoxValue::Number(1.0))),
+                &plus,
+                Box::new(Expr::Literal(LoxValue::Number(2.0)))
+            ))
+        );
     }
 }
