@@ -79,7 +79,7 @@ impl Parser {
         }?;
 
         // if the token after that is = then populate an initializer
-        // bug: if there *isnt* an = this crashes on unexpected eof. peek()? next_if?
+        // TODO bug: if there *isnt* an = this crashes on unexpected eof. peek()? next_if?
         let (initializer, index) =
             match self.next_if(index, |t| matches!(t.token_type, TokenType::Equal)) {
                 (Some(_), index) => {
@@ -185,7 +185,7 @@ impl Parser {
         let mut statements: Vec<Stmt> = Vec::new();
 
         // while the next token isnt a RightBrace
-        //  try to eat a statement and add to statements
+        // try to eat a statement and add to statements
         loop {
             let (tok, new_index) = self.next(index)?;
             match tok.token_type {

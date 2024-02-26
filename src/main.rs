@@ -59,13 +59,9 @@ fn run(input: &str) {
     for (i, token) in tokens.clone().iter().enumerate() {
         println!("{}, {}", i, token);
     }
+    
+    // handle token errors
 
-    /*
-    for err in errs {
-        println!("{:?}", err);
-    } */
-
-    // parse and handle errs
     let parser = Parser::new(tokens);
     let program = parser.parse();
 
