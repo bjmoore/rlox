@@ -27,6 +27,7 @@ impl Parser {
                     index = new_index;
                 }
                 Err(e) => {
+                    println!("Error! {}", e.to_string());
                     program.push(Err(e));
                     index = self.synchronize(index);
                 }
@@ -56,6 +57,7 @@ impl Parser {
             index += 1;
         }
 
+        println!("synchro on: {}", index);
         index
     }
 
@@ -106,6 +108,7 @@ impl Parser {
             TokenType::If => self.if_statement(index),
             TokenType::Print => self.print_statement(index),
             TokenType::While => self.while_statement(index),
+            TokenType::For => self.for_statement(index),
             TokenType::LeftBrace => {
                 let (block, index) = self.block(index)?;
                 Ok((Stmt::Block(block), index))
@@ -178,7 +181,69 @@ impl Parser {
     }
 
     fn for_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        Err(ParseError::TodoError(0))
+        // expect  for "(" ( varDecl | expr ) ";" expr? ";" expr? ")" statement ";"
+        println!("for stmt input: {}", index);
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::LeftParen => Ok(()),
+            _ => Err(ParseError::TodoError(tok.line)),
+        }?;
+
+        // is there an initializer?
+        let (tok, mut index) = self.next(index)?;
+        let initializer = match tok.token_type {
+            TokenType::Semicolon => None,
+            TokenType::Var => Some(self.var_declaration(index)?),
+            _ => Some(self.expression_statement(index)?)
+        };
+
+        if initializer.is_some() { 
+            index = initializer.as_ref().unwrap().1;
+        }
+
+        // is there a condition?
+        let (tok, index) = self.next(index)?;
+        let (condition, index) = match tok.token_type {
+            TokenType::Semicolon => (Expr::Literal(LoxValue::Bool(true)), index),
+            _ => self.expression(index-1)?
+        };
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::Semicolon => Ok(()),
+            _ => Err(ParseError::TodoError(tok.line)),
+        }?;
+
+        // is there an increment?
+        let (tok, mut index) = self.next(index)?;
+        let increment = match tok.token_type {
+            TokenType::RightParen => None,
+            _ => Some(self.expression(index-1)?)
+        };
+        if increment.is_some() { 
+            index = increment.as_ref().unwrap().1;
+        }
+
+        // expect )
+        let (tok, index) = self.next(index)?;
+        match tok.token_type {
+            TokenType::RightParen => Ok(()),
+            _ => Err(ParseError::TodoError(tok.line)),
+        }?;
+
+        let (body, index) = self.statement(index)?;
+        let mut body = vec![body];
+        if increment.is_some() {
+            body.push(Stmt::ExprStmt(increment.unwrap().0));
+        }
+
+        let mut for_contents: Vec<Stmt> = Vec::new();
+        if initializer.is_some() {
+            for_contents.push(initializer.unwrap().0);
+        }
+        for_contents.push(Stmt::While(condition, Box::new(Stmt::Block(body))));
+
+        println!("for stmt exit: {}", index);
+        Ok((Stmt::Block(for_contents), index))
     }
 
     fn block(&self, mut index: usize) -> Result<(Vec<Stmt>, usize), ParseError> {
