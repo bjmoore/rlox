@@ -10,6 +10,7 @@ statement = exprStmt
           | ifStmt 
           | printStmt 
           | whileStmt
+          | forStmt
           | block ;
 
 ifStmt = "if" "(" expression ")" statement ( "else" statement )? ;
@@ -19,6 +20,8 @@ exprStmt = expression ";" ;
 printStmt = "print" expression ";" ;
 
 whileStmt = "while" "(" expression ")" statement ;
+
+forStmt = "for" "(" ( varDecl | expr )? ";" expr? ";" expr? ")" statement ;
 
 expression = assignment ;
 assignment = IDENTIFIER "=" assignment
