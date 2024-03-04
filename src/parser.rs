@@ -5,14 +5,14 @@ use crate::token::Token;
 use crate::token::TokenType;
 use crate::value::LoxValue;
 
-pub struct Parser {
+pub struct LoxParser {
     tokens: Vec<Token>,
 }
 
 type IndexedExpr<'a> = (Expr<'a>, usize);
 type IndexedStmt<'a> = (Stmt<'a>, usize);
 
-impl Parser {
+impl LoxParser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens }
     }
@@ -194,10 +194,10 @@ impl Parser {
         let initializer = match tok.token_type {
             TokenType::Semicolon => None,
             TokenType::Var => Some(self.var_declaration(index)?),
-            _ => Some(self.expression_statement(index)?)
+            _ => Some(self.expression_statement(index)?),
         };
 
-        if initializer.is_some() { 
+        if initializer.is_some() {
             index = initializer.as_ref().unwrap().1;
         }
 
@@ -205,7 +205,7 @@ impl Parser {
         let (tok, index) = self.next(index)?;
         let (condition, index) = match tok.token_type {
             TokenType::Semicolon => (Expr::Literal(LoxValue::Bool(true)), index),
-            _ => self.expression(index-1)?
+            _ => self.expression(index - 1)?,
         };
         let (tok, index) = self.next(index)?;
         match tok.token_type {
@@ -217,9 +217,9 @@ impl Parser {
         let (tok, mut index) = self.next(index)?;
         let increment = match tok.token_type {
             TokenType::RightParen => None,
-            _ => Some(self.expression(index-1)?)
+            _ => Some(self.expression(index - 1)?),
         };
-        if increment.is_some() { 
+        if increment.is_some() {
             index = increment.as_ref().unwrap().1;
         }
 
@@ -488,7 +488,7 @@ mod tests {
             line: 0,
         };
         let test_tok_stream = vec![number1, plus.clone(), number2, semicolon];
-        let test_parser = Parser::new(test_tok_stream);
+        let test_parser = LoxParser::new(test_tok_stream);
         assert_eq!(
             *test_parser.parse()[0].as_ref().unwrap(),
             Stmt::ExprStmt(Expr::Binary(

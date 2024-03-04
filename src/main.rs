@@ -19,36 +19,42 @@ use statement::Stmt;
 use token::Token;
 use token::TokenStream;
 
-use crate::parser::Parser;
+use clap::Parser;
+use parser::LoxParser;
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    input_file: Option<String>,
+    #[arg(short, long)]
+    debug: bool,
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     // TODO: add a debug argument
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 2 {
-        Err(Box::<dyn Error>::from("Usage: rlox [script]"))
-    } else if args.len() == 2 {
-        run_file(&args[1])
-    } else {
-        run_prompt()
+    let cli = Cli::parse();
+    match cli.input_file {
+        Some(input_file) => run_file(&input_file, cli.debug),
+        None => run_prompt(cli.debug),
     }
 }
 
-fn run_file(path: &str) -> Result<(), Box<dyn Error>> {
+fn run_file(path: &str, debug: bool) -> Result<(), Box<dyn Error>> {
     let input = String::from_utf8(fs::read(path)?)?;
-    Ok(run(&input))
+    Ok(run(&input, debug))
 }
 
-fn run_prompt() -> Result<(), Box<dyn Error>> {
+fn run_prompt(debug: bool) -> Result<(), Box<dyn Error>> {
     loop {
         let mut buf = String::new();
         io::stdout().write_all(b"> ")?;
         io::stdout().flush()?;
         io::stdin().read_line(&mut buf)?;
-        run(&buf);
+        run(&buf, debug);
     }
 }
 
-fn run(input: &str) {
+fn run(input: &str, debug: bool) {
     // lex and handle errs
     let (tokens, errs): (Vec<Result<Token, _>>, Vec<Result<_, ParseError>>) =
         TokenStream::new(input).partition(|t| t.is_ok());
@@ -59,16 +65,18 @@ fn run(input: &str) {
     for (i, token) in tokens.clone().iter().enumerate() {
         println!("{}, {}", i, token);
     }
-    
+
     // handle token errors
 
-    let parser = Parser::new(tokens);
+    let parser = LoxParser::new(tokens);
     let program = parser.parse();
 
-    for statement in &program {
-        match statement {
-            Ok(statement) => print!("{}", statement.to_string()),
-            Err(e) => print!("[ERROR] {}", e.to_string()),
+    if debug {
+        for statement in &program {
+            match statement {
+                Ok(statement) => print!("{}", statement.to_string()),
+                Err(e) => print!("[ERROR] {}", e.to_string()),
+            }
         }
     }
 
