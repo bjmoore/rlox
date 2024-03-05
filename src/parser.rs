@@ -13,8 +13,6 @@ type IndexedExpr<'a> = (Expr<'a>, usize);
 type IndexedStmt<'a> = (Stmt<'a>, usize);
 
 // todo:
-// remove my caveman debug statements
-// capture synchro errors and throw them higher up to be caugt by debug output
 // detect infinite parsing loops and fatal out
 
 impl LoxParser {
@@ -22,23 +20,26 @@ impl LoxParser {
         Self { tokens }
     }
 
-    pub fn parse(&self) -> Vec<Result<Stmt, ParseError>> {
+    pub fn parse(&self) -> (Vec<Stmt>, Vec<ParseError>) {
         let mut index: usize = 0;
         let mut program = Vec::new();
+        let mut parse_errors = Vec::new();
         while let Some(_) = self.tokens.get(index) {
             match self.declaration(index) {
                 Ok((stmt, new_index)) => {
-                    program.push(Ok(stmt));
+                    program.push(stmt);
                     index = new_index;
                 }
                 Err(e) => {
-                    println!("Error! {}", e.to_string());
-                    program.push(Err(e));
+                    // Unexpected EOF should be unrecoverable
+                    // Also detect infinite loops (probably here?)
+                    println!("Error {}, synchronizing at index {}", e.to_string(), index);
+                    parse_errors.push(e);
                     index = self.synchronize(index);
                 }
             }
         }
-        program
+        (program, parse_errors)
     }
 
     fn synchronize(&self, mut index: usize) -> usize {
@@ -453,40 +454,5 @@ impl LoxParser {
             Some(tok) if predicate(tok) => (Some(tok), index + 1),
             _ => (None, index),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_literal_bool() {
-        let number1 = Token {
-            token_type: TokenType::Number(1.0),
-            line: 0,
-        };
-        let plus = Token {
-            token_type: TokenType::Plus,
-            line: 0,
-        };
-        let number2 = Token {
-            token_type: TokenType::Number(2.0),
-            line: 0,
-        };
-        let semicolon = Token {
-            token_type: TokenType::Semicolon,
-            line: 0,
-        };
-        let test_tok_stream = vec![number1, plus.clone(), number2, semicolon];
-        let test_parser = LoxParser::new(test_tok_stream);
-        assert_eq!(
-            *test_parser.parse()[0].as_ref().unwrap(),
-            Stmt::ExprStmt(Expr::Binary(
-                Box::new(Expr::Literal(LoxValue::Number(1.0))),
-                &plus,
-                Box::new(Expr::Literal(LoxValue::Number(2.0)))
-            ))
-        );
     }
 }

@@ -63,35 +63,30 @@ fn run(input: &str, debug: bool) {
     let errs = errs.into_iter().map(|t| t.unwrap_err()).collect::<Vec<_>>();
 
     if debug {
+        println!("Tokenized input:");
         for (i, token) in tokens.clone().iter().enumerate() {
-            println!("{}, {}", i, token);
+            print!("{}:{} ", i, token);
         }
     }
 
     // handle token errors
 
     let parser = LoxParser::new(tokens);
-    let program = parser.parse();
+    let (program, parse_errors) = parser.parse();
 
     if debug {
+        println!("Statements:");
         for statement in &program {
-            match statement {
-                Ok(statement) => print!("{}", statement.to_string()),
-                Err(e) => print!("[ERROR] {}", e.to_string()),
-            }
+            println!("{}", statement.to_string())
+        }
+
+        println!("Errors:");
+        for error in &parse_errors {
+            println!("Error: {}", error.to_string())
         }
     }
 
-    let (statements, errs): (Vec<Result<Stmt, _>>, Vec<Result<_, ParseError>>) =
-        program.into_iter().partition(|t| t.is_ok());
-
-    let program = statements
-        .into_iter()
-        .map(|t| t.unwrap())
-        .collect::<Vec<_>>();
-    let errs = errs.into_iter().map(|t| t.unwrap_err()).collect::<Vec<_>>();
-
-    if errs.is_empty() {
+    if parse_errors.is_empty() {
         let mut interpreter = LoxInterpreter::new();
         interpreter.run(&program);
     }
