@@ -12,6 +12,11 @@ pub struct LoxParser {
 type IndexedExpr<'a> = (Expr<'a>, usize);
 type IndexedStmt<'a> = (Stmt<'a>, usize);
 
+// todo:
+// remove my caveman debug statements
+// capture synchro errors and throw them higher up to be caugt by debug output
+// detect infinite parsing loops and fatal out
+
 impl LoxParser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens }
@@ -57,7 +62,6 @@ impl LoxParser {
             index += 1;
         }
 
-        println!("synchro on: {}", index);
         index
     }
 
@@ -74,13 +78,11 @@ impl LoxParser {
 
     fn var_declaration(&self, index: usize) -> Result<IndexedStmt, ParseError> {
         let (tok, index) = self.next(index)?;
-        // expect an identifier or fail
         let name = match &tok.token_type {
             TokenType::Identifier(name) => Ok(name),
             _ => Err(ParseError::ExpectedIdentifier(tok.line)),
         }?;
 
-        // if the token after that is = then populate an initializer
         // TODO bug: if there *isnt* an = this crashes on unexpected eof. peek()? next_if?
         let (initializer, index) =
             match self.next_if(index, |t| matches!(t.token_type, TokenType::Equal)) {
@@ -91,18 +93,15 @@ impl LoxParser {
                 (None, new_index) => (None, new_index),
             };
 
-        // finally our statement should end with a semicolon
         let (tok, index) = self.next(index)?;
         if !matches!(&tok.token_type, TokenType::Semicolon) {
             return Err(ParseError::ExpectedSemicolon(tok.line));
         }
 
-        // return (ident_tok, initializer)
         Ok((Stmt::VarStmt(name.clone(), initializer), index))
     }
 
     fn statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        println!("stmt input: {}", index);
         let (tok, index) = self.next(index)?;
         match tok.token_type {
             TokenType::If => self.if_statement(index),
@@ -182,7 +181,6 @@ impl LoxParser {
 
     fn for_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
         // expect  for "(" ( varDecl | expr ) ";" expr? ";" expr? ")" statement ";"
-        println!("for stmt input: {}", index);
         let (tok, index) = self.next(index)?;
         match tok.token_type {
             TokenType::LeftParen => Ok(()),
@@ -242,7 +240,6 @@ impl LoxParser {
         }
         for_contents.push(Stmt::While(condition, Box::new(Stmt::Block(body))));
 
-        println!("for stmt exit: {}", index);
         Ok((Stmt::Block(for_contents), index))
     }
 
@@ -282,7 +279,6 @@ impl LoxParser {
     }
 
     fn expression_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
-        println!("exprstmt input: {}", index);
         let (value, index) = self.expression(index)?;
         if let Some(tok) = self.tokens.get(index) {
             match tok.token_type {
@@ -299,7 +295,6 @@ impl LoxParser {
     }
 
     fn assignment(&self, index: usize) -> Result<IndexedExpr, ParseError> {
-        println!("input: {}", index);
         let (expr, index) = self.or(index)?;
 
         // if we have an equal
@@ -308,16 +303,12 @@ impl LoxParser {
         {
             match expr {
                 Expr::Variable(name) => {
-                    println!("if of assignment");
-                    println!("{:?}", self.tokens.get(index));
                     let (value, index) = self.assignment(index)?;
                     Ok((Expr::Assign(name.clone(), Box::new(value)), index))
                 }
                 _ => Err(ParseError::InvalidAssignment(tok.line)),
             }
         } else {
-            //  return expr normally
-            println!("return: {}", index);
             Ok((expr, index))
         }
     }

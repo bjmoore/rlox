@@ -62,8 +62,10 @@ fn run(input: &str, debug: bool) {
     let tokens = tokens.into_iter().map(|t| t.unwrap()).collect::<Vec<_>>();
     let errs = errs.into_iter().map(|t| t.unwrap_err()).collect::<Vec<_>>();
 
-    for (i, token) in tokens.clone().iter().enumerate() {
-        println!("{}, {}", i, token);
+    if debug {
+        for (i, token) in tokens.clone().iter().enumerate() {
+            println!("{}, {}", i, token);
+        }
     }
 
     // handle token errors
