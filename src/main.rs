@@ -67,6 +67,7 @@ fn run(input: &str, debug: bool) {
         for (i, token) in tokens.clone().iter().enumerate() {
             print!("{}:{} ", i, token);
         }
+        println!();
     }
 
     // handle token errors

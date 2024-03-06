@@ -10,6 +10,7 @@ pub enum Stmt<'a> {
     IfStmt(Expr<'a>, Box<Stmt<'a>>, Option<Box<Stmt<'a>>>),
     While(Expr<'a>, Box<Stmt<'a>>),
     Block(Vec<Stmt<'a>>),
+    Break(),
 }
 
 impl<'a> fmt::Display for Stmt<'a> {
@@ -51,6 +52,10 @@ impl<'a> fmt::Display for Stmt<'a> {
                     write!(f, "{}", statement.to_string())?;
                 }
                 write!(f, "}}")?;
+                Ok(())
+            }
+            Self::Break() => {
+                writeln!(f, "break")?;
                 Ok(())
             }
         }

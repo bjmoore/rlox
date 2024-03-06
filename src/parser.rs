@@ -22,6 +22,7 @@ impl LoxParser {
 
     pub fn parse(&self) -> (Vec<Stmt>, Vec<ParseError>) {
         let mut index: usize = 0;
+        let mut last_sync_index: usize = 0;
         let mut program = Vec::new();
         let mut parse_errors = Vec::new();
         while let Some(_) = self.tokens.get(index) {
@@ -31,11 +32,14 @@ impl LoxParser {
                     index = new_index;
                 }
                 Err(e) => {
-                    // Unexpected EOF should be unrecoverable
-                    // Also detect infinite loops (probably here?)
                     println!("Error {}, synchronizing at index {}", e.to_string(), index);
                     parse_errors.push(e);
                     index = self.synchronize(index);
+                    if index == last_sync_index {
+                        println!("Infinite parsing loop at index {}, aborting", index);
+                        break;
+                    }
+                    last_sync_index = index;
                 }
             }
         }
