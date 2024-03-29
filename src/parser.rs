@@ -12,9 +12,6 @@ pub struct LoxParser {
 type IndexedExpr<'a> = (Expr<'a>, usize);
 type IndexedStmt<'a> = (Stmt<'a>, usize);
 
-// todo:
-// detect infinite parsing loops and fatal out
-
 impl LoxParser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens }
@@ -113,6 +110,7 @@ impl LoxParser {
             TokenType::Print => self.print_statement(index),
             TokenType::While => self.while_statement(index),
             TokenType::For => self.for_statement(index),
+            TokenType::Break => self.break_statement(index),
             TokenType::LeftBrace => {
                 let (block, index) = self.block(index)?;
                 Ok((Stmt::Block(block), index))
@@ -246,6 +244,17 @@ impl LoxParser {
         for_contents.push(Stmt::While(condition, Box::new(Stmt::Block(body))));
 
         Ok((Stmt::Block(for_contents), index))
+    }
+
+    fn break_statement(&self, index: usize) -> Result<IndexedStmt, ParseError> {
+        if let Some(tok) = self.tokens.get(index) {
+            match tok.token_type {
+                TokenType::Semicolon => Ok((Stmt::Break(), index + 1)),
+                _ => Err(ParseError::ExpectedSemicolon(tok.line)),
+            }
+        } else {
+            Err(ParseError::UnexpectedEof)
+        }
     }
 
     fn block(&self, mut index: usize) -> Result<(Vec<Stmt>, usize), ParseError> {

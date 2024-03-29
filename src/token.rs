@@ -36,6 +36,7 @@ pub enum TokenType {
 
     // Keywords.
     And,
+    Break,
     Class,
     Else,
     False,
@@ -203,6 +204,7 @@ impl<'a> TokenStream<'a> {
 
         match identifier_string.as_str() {
             "and" => self.add_token(TokenType::And),
+            "break" => self.add_token(TokenType::Break),
             "class" => self.add_token(TokenType::Class),
             "else" => self.add_token(TokenType::Else),
             "false" => self.add_token(TokenType::False),

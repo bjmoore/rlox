@@ -9,6 +9,10 @@ pub struct LoxInterpreter {
     environment: Environment,
 }
 
+enum ControlStatement {
+    Break,
+}
+
 impl LoxInterpreter {
     pub fn new() -> Self {
         Self {
@@ -167,15 +171,15 @@ impl LoxInterpreter {
         }
     }
 
-    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<Option<ControlStatement>, RuntimeError> {
         match &stmt {
             Stmt::ExprStmt(expr) => {
                 self.evaluate(expr)?;
-                Ok(())
+                Ok(None)
             }
             Stmt::PrintStmt(value) => {
                 println!("{}", self.evaluate(value)?);
-                Ok(())
+                Ok(None)
             }
             Stmt::VarStmt(name, initializer) => {
                 let initial_value = match initializer {
@@ -183,15 +187,21 @@ impl LoxInterpreter {
                     None => LoxValue::Nil,
                 };
                 self.environment.put(name.clone(), initial_value);
-                Ok(())
+                Ok(None)
             }
             Stmt::Block(block) => {
                 self.environment.push_env();
                 for statement in block {
-                    self.execute(statement)?;
+                    if let Some(control_statement) = self.execute(statement)? {
+                        match control_statement {
+                            ControlStatement::Break => {
+                                return Ok(Some(ControlStatement::Break));
+                            }
+                        }
+                    }
                 }
                 self.environment.pop_env();
-                Ok(())
+                Ok(None)
             }
             Stmt::IfStmt(condition, then_stmt, else_branch) => {
                 if self.evaluate(condition)?.to_bool() {
@@ -199,14 +209,20 @@ impl LoxInterpreter {
                 } else if let Some(else_stmt) = else_branch {
                     self.execute(else_stmt)?;
                 }
-                Ok(())
+                Ok(None)
             }
-            Stmt::Break() => Ok(()),
-            Stmt::While(condition, block) => {
+            Stmt::Break() => Ok(Some(ControlStatement::Break)),
+            Stmt::While(condition, body) => {
                 while self.evaluate(condition)?.truthy().to_bool() {
-                    self.execute(block)?;
+                    if let Some(control_statement) = self.execute(body)? {
+                        match control_statement {
+                            ControlStatement::Break => {
+                                break;
+                            }
+                        }
+                    };
                 }
-                Ok(())
+                Ok(None)
             }
         }
     }

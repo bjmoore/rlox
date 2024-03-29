@@ -5,7 +5,7 @@ var c = 4;
     print a;
     print c;
 }
-print a;
+print a; 
 
 var b = 6;
 if (b) {
@@ -52,3 +52,13 @@ while (test > 0) {
 for (var d = 0; d < 5; d = d + 1) {
     print d;
 }
+
+
+var breaktest = 1;
+while (breaktest < 10) {
+    print breaktest;
+    break ;
+    breaktest = breaktest + 1;
+}
+
+print 5;
